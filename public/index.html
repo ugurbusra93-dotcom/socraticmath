@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SocraticMath</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--pink:#FFB3C6;--pink-d:#E8658A;--yellow:#FFF0A0;--yellow-d:#E5C000;--mint:#B8F0D8;--mint-d:#2DAF78;--lav:#D8C8FF;--lav-d:#7C5CBF;--sky:#B8E0FF;--sky-d:#3A8FD8;--peach:#FFD8B8;--peach-d:#E07830;--bg:#FFF8F0;--text:#3A2A4A;--text-md:#7A6A8A;--r:20px;--rs:14px;--sh:0 4px 20px rgba(120,80,160,.10)}
+    body{font-family:'Nunito',sans-serif;background:var(--bg);background-image:radial-gradient(circle at 10% 20%,#FFE8F0 0%,transparent 40%),radial-gradient(circle at 90% 80%,#E8F0FF 0%,transparent 40%);min-height:100vh;padding:20px 16px 60px;color:var(--text)}
+    .page{max-width:680px;margin:0 auto}
+    .deco{position:fixed;pointer-events:none;z-index:0;font-size:32px;opacity:.15;animation:float 6s ease-in-out infinite}
+    .deco:nth-child(1){top:8%;left:4%}.deco:nth-child(2){top:15%;right:6%;animation-delay:1s}.deco:nth-child(3){top:45%;left:2%;animation-delay:2s}.deco:nth-child(4){top:70%;right:4%;animation-delay:.5s}.deco:nth-child(5){top:85%;left:8%;animation-delay:1.5s}
+    @keyframes float{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-14px) rotate(5deg)}}
+    .header{text-align:center;margin-bottom:28px;position:relative;z-index:1}
+    .logo-emoji{font-size:56px;display:block;margin-bottom:6px;animation:bounce 2s ease-in-out infinite}
+    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    .logo-title{font-size:32px;font-weight:900;color:var(--lav-d);text-shadow:3px 3px 0 var(--lav)}
+    .logo-sub{font-size:13px;color:var(--text-md);font-weight:600;margin-top:4px}
+    .admin-bar{background:#fff;border:2px dashed var(--lav);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative;z-index:1;box-shadow:var(--sh)}
+    .admin-label{font-size:11px;color:var(--lav-d);text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+    input[type=file]{display:none}
+    .btn{font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;padding:8px 16px;border:2px solid var(--lav);border-radius:50px;background:#fff;color:var(--lav-d);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;box-shadow:0 2px 8px rgba(124,92,191,.15)}
+    .btn:hover{background:var(--lav);transform:translateY(-1px)}
+    .btn-demo{border-color:var(--pink);color:var(--pink-d)}.btn-demo:hover{background:var(--pink)}
+    .file-info{font-size:12px;color:var(--text-md);font-weight:600}
+    .badge{margin-left:auto;font-size:12px;font-weight:800;padding:4px 12px;border-radius:50px;background:var(--mint);color:var(--mint-d)}
+    .student-section{display:none;position:relative;z-index:1}.student-section.visible{display:block}
+    .student-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .section-title{font-size:15px;font-weight:800;color:var(--lav-d)}
+    .section-sub{font-size:11px;color:var(--text-md);font-weight:600;margin-top:2px}
+    .progress-row{display:flex;gap:6px;flex-wrap:wrap}
+    .progress-dot{width:12px;height:12px;border-radius:50%;background:#E8E0F0;transition:all .3s;border:2px solid transparent}
+    .progress-dot.done{background:var(--mint-d);border-color:var(--mint)}.progress-dot.active{background:var(--lav-d);border-color:var(--lav);transform:scale(1.3)}
+    .question-card{background:#fff;border-radius:var(--r);padding:24px;margin-bottom:16px;box-shadow:var(--sh);border:2px solid var(--lav);position:relative;overflow:hidden}
+    .question-card::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--pink),var(--lav),var(--sky),var(--mint))}
+    .q-label{font-size:11px;color:var(--lav-d);font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+    .problem-text{font-size:16px;line-height:1.8;color:var(--text);font-weight:600;background:var(--yellow);border-radius:var(--rs);padding:16px 18px;margin-bottom:20px;border:2px solid var(--yellow-d);position:relative}
+    .problem-text::before{content:'📖';position:absolute;top:-14px;left:16px;font-size:22px}
+    .choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .choice-btn{padding:14px 16px;border:2.5px solid #E8E0F0;border-radius:var(--rs);background:#fff;color:var(--text);cursor:pointer;font-size:15px;font-weight:700;font-family:'Nunito',sans-serif;text-align:left;display:flex;align-items:center;gap:10px;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    .choice-btn:hover:not(:disabled){border-color:var(--lav-d);background:var(--lav);transform:translateY(-2px);box-shadow:0 6px 16px rgba(124,92,191,.2)}
+    .choice-btn:disabled{cursor:default;opacity:0.35}
+    .choice-btn.eliminated{display:none}
+    .choice-btn.selected-wrong{border-color:var(--pink-d);background:var(--pink)}
+    .choice-btn.correct-reveal{border-color:var(--mint-d);background:var(--mint);opacity:1}
+    .choice-key{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:#F0EAF8;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--lav-d)}
+    .choice-btn:hover:not(:disabled) .choice-key{background:#fff}
+    .choice-btn.selected-wrong .choice-key{background:var(--pink-d);color:#fff}
+    .choice-btn.correct-reveal .choice-key{background:var(--mint-d);color:#fff}
+    .hint-box{background:var(--lav);border:2px solid var(--lav-d);border-radius:var(--r);padding:16px 20px;margin-bottom:16px;display:none}
+    .hint-box.visible{display:flex;gap:14px;align-items:flex-start}
+    .hint-avatar{font-size:28px;flex-shrink:0}
+    .hint-header{font-size:12px;font-weight:800;color:var(--lav-d);margin-bottom:4px}
+    .hint-text{font-size:14px;font-weight:600;color:var(--lav-d);line-height:1.6}
+    .dots span{animation:blink 1.2s infinite;display:inline-block;font-size:18px}
+    .dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+    @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+    .success-banner{background:var(--mint);border:2.5px solid var(--mint-d);border-radius:var(--r);padding:16px 20px;display:none;align-items:center;gap:14px;margin-bottom:16px}
+    .success-banner.visible{display:flex}
+    .success-text{font-size:16px;color:var(--mint-d);font-weight:800}
+    .next-row{display:none;justify-content:flex-end;margin-bottom:8px}.next-row.visible{display:flex}
+    .next-btn{padding:12px 28px;font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;background:linear-gradient(135deg,var(--mint-d),var(--sky-d));color:#fff;border:none;border-radius:50px;cursor:pointer;box-shadow:0 4px 15px rgba(45,175,120,.3);transition:all .2s}
+    .next-btn:hover{transform:translateY(-2px)}
+    .score-card{display:none;background:#fff;border:2.5px solid var(--lav);border-radius:var(--r);padding:48px 24px;text-align:center;box-shadow:var(--sh)}
+    .score-card.visible{display:block}
+    .score-trophy{font-size:64px;display:block;margin-bottom:12px}
+    .score-num{font-size:64px;font-weight:900;color:var(--mint-d);text-shadow:3px 3px 0 var(--mint);line-height:1}
+    .score-label{font-size:18px;color:var(--text-md);font-weight:700;margin-top:8px;margin-bottom:28px}
+    .stars{font-size:32px;margin-bottom:20px}
+    @media(max-width:480px){.choices-grid{grid-template-columns:1fr}.logo-title{font-size:26px}}
+  </style>
+</head>
+<body>
+<div class="deco">⭐</div>
+<div class="deco">🌈</div>
+<div class="deco">✏️</div>
+<div class="deco">🎯</div>
+<div class="deco">💡</div>
+<div class="page">
+  <div class="header">
+    <span class="logo-emoji">🧮</span>
+    <div class="logo-title">SocraticMath</div>
+    <div class="logo-sub">Yanlışı Sorgulayarak Doğruyu İnşa Et ✨</div>
+  </div>
+  <div class="admin-bar">
+    <span class="admin-label">🔒 Öğretmen</span>
+    <label class="btn" for="xlsxFile">📤 Excel yükle</label>
+    <input type="file" id="xlsxFile" accept=".xlsx,.xls">
+    <button class="btn btn-demo" id="demoBtn">⚡ Demo sorular</button>
+    <span class="file-info" id="fileInfo">Henüz dosya seçilmedi</span>
+    <span class="badge" id="qCountBadge" style="display:none"></span>
+  </div>
+  <div class="student-section" id="studentSection">
+    <div class="student-header">
+      <div>
+        <div class="section-title">📐 Problem Zamanı!</div>
+        <div class="section-sub" id="demoNotice"></div>
+      </div>
+      <div class="progress-row" id="progressRow"></div>
+    </div>
+    <div class="question-card" id="questionCard">
+      <div class="q-label">🎯 Problem <span id="qNum"></span></div>
+      <div class="problem-text" id="qText"></div>
+      <div class="choices-grid" id="choicesGrid"></div>
+    </div>
+    <div class="hint-box" id="hintBox">
+      <div class="hint-avatar">🦉</div>
+      <div>
+        <div class="hint-header">Socrates diyor ki:</div>
+        <div class="hint-text" id="hintText"></div>
+      </div>
+    </div>
+    <div class="success-banner" id="successBanner">
+      <span style="font-size:32px">🎉</span>
+      <div class="success-text" id="successText">Harika!</div>
+    </div>
+    <div class="next-row" id="nextRow">
+      <button class="next-btn" id="nextBtn">Sonraki Problem → 🌟</button>
+    </div>
+    <div class="score-card" id="scoreCard">
+      <span class="score-trophy">🏆</span>
+      <div class="stars" id="starsDiv">⭐⭐⭐</div>
+      <div class="score-num" id="scoreNum">-</div>
+      <div class="score-label">Tüm problemleri tamamladın!</div>
+      <button class="btn btn-demo" id="restartBtn" style="margin:0 auto;font-size:15px;padding:12px 28px">🔄 Tekrar Dene</button>
+    </div>
+  </div>
+</div>
+<script>
+const KEYS=['A','B','C','D'];
+let questions=[],current=0,score=0,answered=false,isBusy=false;
+let eliminatedKeys=[],attemptCount=0;
+
+const DEMO=[
+  {problem:"Ali'nin 12 tane bilyesi var. Arkadaşına 5 tane verdi. Sonra marketten 3 tane daha aldı. Ali'nin şu an kaç bilyesi var?",secenekler:["8","10","14","15"]},
+  {problem:"Bir sınıfta 24 öğrenci var. Öğretmen onları 4 eşit gruba ayırdı. Her grupta kaç öğrenci olur?",secenekler:["4","5","6","8"]},
+  {problem:"Zeynep sabah 8 tane kurabiye pişirdi, öğleden sonra 6 tane daha pişirdi. Bunları 7 arkadaşına eşit paylaştıracak. Her arkadaşa kaç kurabiye düşer?",secenekler:["2","3","4","6"]},
+  {problem:"Bir çiftlikte 3 ahır var. Her ahırda 8 inek bulunuyor. Toplam kaç inek vardır?",secenekler:["11","22","24","32"]},
+  {problem:"Dükkanda 45 lira olan bir oyuncak var. Mehmet'in 28 lirası var. Oyuncağı alabilmek için kaç lira daha biriktirmesi gerekir?",secenekler:["13","17","23","27"]}
+];
+
+function renderProgress(){
+  const row=document.getElementById('progressRow');
+  row.innerHTML='';
+  questions.forEach(function(_,i){
+    const d=document.createElement('div');
+    d.className='progress-dot'+(i<current?' done':i===current?' active':'');
+    row.appendChild(d);
+  });
+}
+
+function renderChoices(){
+  const q=questions[current];
+  const grid=document.getElementById('choicesGrid');
+  grid.innerHTML='';
+  q.secenekler.forEach(function(opt,i){
+    if(eliminatedKeys.indexOf(KEYS[i])!==-1) return;
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.dataset.key=KEYS[i];
+    btn.innerHTML='<span class="choice-key">'+KEYS[i]+'</span> '+opt;
+    btn.addEventListener('click',function(){handleChoice(KEYS[i],opt,btn);});
+    grid.appendChild(btn);
+  });
+}
+
+function loadQuestion(){
+  if(current>=questions.length){showScore();return;}
+  answered=false;eliminatedKeys=[];attemptCount=0;
+  const q=questions[current];
+  document.getElementById('qNum').textContent=(current+1)+' / '+questions.length;
+  document.getElementById('qText').textContent=q.problem;
+  document.getElementById('hintBox').classList.remove('visible');
+  document.getElementById('hintText').textContent='';
+  document.getElementById('successBanner').classList.remove('visible');
+  document.getElementById('nextRow').classList.remove('visible');
+  renderChoices();
+  renderProgress();
+}
+
+function handleChoice(key,text,btn){
+  if(answered||isBusy)return;
+  isBusy=true;
+  attemptCount++;
+  btn.disabled=true;
+  getHint(key,text,btn);
+}
+
+async function getHint(selectedKey,selectedText,btn){
+  const q=questions[current];
+
+  const hintBox=document.getElementById('hintBox');
+  const hintText=document.getElementById('hintText');
+  hintBox.classList.add('visible');
+  hintText.innerHTML='<span class="dots"><span>•</span><span>•</span><span>•</span></span>';
+
+  const userPrompt='Soru: "'+q.problem+'"\n\n'+
+    'Tum secenekler: '+q.secenekler.map(function(s,i){return KEYS[i]+') '+s;}).join(', ')+'\n'+
+    'Ogrencinin sectigi: '+selectedKey+') '+selectedText+'\n'+
+    'Deneme sayisi: '+attemptCount+'\n\n'+
+    'Format kuralina tam uy: [HESAPLA]...[/HESAPLA] [SONUC]...[/SONUC] [MESAJ]...[/MESAJ]';
+
+  try{
+    const res=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:[{role:'user',content:userPrompt}]})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error);
+
+    const fullReply=data.reply;
+    const sonucMatch=fullReply.match(/\[SONUC\]([\s\S]*?)\[\/SONUC\]/i);
+    const mesajMatch=fullReply.match(/\[MESAJ\]([\s\S]*?)\[\/MESAJ\]/i);
+
+    const verdict=sonucMatch ? sonucMatch[1].trim().toUpperCase() : '';
+    const mesaj=mesajMatch ? mesajMatch[1].trim() : fullReply;
+
+    if(verdict.indexOf('DOGRU')!==-1 || verdict.indexOf('DOĞRU')!==-1){
+      answered=true;
+      score++;
+      btn.classList.add('correct-reveal');
+      hintBox.classList.remove('visible');
+      document.getElementById('successBanner').classList.add('visible');
+      document.getElementById('successText').textContent=mesaj || 'Bravo! Dogru cevabi buldun!';
+      document.getElementById('nextRow').classList.add('visible');
+      isBusy=false;
+      return;
+    }
+
+    hintText.textContent=mesaj;
+    btn.classList.add('selected-wrong');
+    setTimeout(function(){
+      btn.classList.remove('selected-wrong');
+      btn.classList.add('eliminated');
+      eliminatedKeys.push(selectedKey);
+      renderChoices();
+      isBusy=false;
+    },600);
+
+  }catch(e){
+    hintText.textContent='Bir hata olustu: '+e.message;
+    isBusy=false;
+  }
+}
+document.getElementById('nextBtn').addEventListener('click',function(){current++;loadQuestion();});
+
+document.getElementById('restartBtn').addEventListener('click',function(){
+  current=0;score=0;
+  document.getElementById('scoreCard').classList.remove('visible');
+  document.getElementById('questionCard').style.display='';
+  loadQuestion();
+});
+
+function showScore(){
+  document.getElementById('questionCard').style.display='none';
+  document.getElementById('hintBox').classList.remove('visible');
+  document.getElementById('successBanner').classList.remove('visible');
+  document.getElementById('nextRow').classList.remove('visible');
+  document.getElementById('scoreNum').textContent=score+' / '+questions.length;
+  const pct=score/questions.length;
+  document.getElementById('starsDiv').textContent=pct>=0.8?'⭐⭐⭐':pct>=0.5?'⭐⭐':'⭐';
+  document.getElementById('scoreCard').classList.add('visible');
+}
+
+function startApp(){
+  document.getElementById('studentSection').classList.add('visible');
+  document.getElementById('scoreCard').classList.remove('visible');
+  document.getElementById('questionCard').style.display='';
+  loadQuestion();
+}
+
+document.getElementById('demoBtn').addEventListener('click',function(){
+  questions=DEMO;current=0;score=0;
+  document.getElementById('fileInfo').textContent='Demo yuklendi';
+  document.getElementById('qCountBadge').textContent=DEMO.length+' problem';
+  document.getElementById('qCountBadge').style.display='';
+  document.getElementById('demoNotice').textContent='5 demo problem';
+  startApp();
+});
+
+document.getElementById('xlsxFile').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws);
+      questions=rows.map(function(r){
+        return{
+          problem:String(r['problem']||r['Problem']||r['soru']||r['Soru']||''),
+          secenekler:[String(r['A']||r['a']||''),String(r['B']||r['b']||''),String(r['C']||r['c']||''),String(r['D']||r['d']||'')]
+        };
+      }).filter(function(q){return q.problem;});
+      if(!questions.length){document.getElementById('fileInfo').textContent='Sutunlar: problem, A, B, C, D';return;}
+      current=0;score=0;
+      document.getElementById('fileInfo').textContent=file.name;
+      document.getElementById('qCountBadge').textContent=questions.length+' problem';
+      document.getElementById('qCountBadge').style.display='';
+      document.getElementById('demoNotice').textContent=file.name+' dosyasindan yuklendi';
+      startApp();
+    }catch(err){document.getElementById('fileInfo').textContent='Hata: '+err.message;}
+  };
+  reader.readAsBinaryString(file);
+});
+</script>
+</body>
+</html>
