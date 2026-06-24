@@ -414,7 +414,20 @@ async function getHint(selectedKey,selectedText,btn){
     const sonucMatch=fullReply.match(/\[SONUC\]([\s\S]*?)\[\/SONUC\]/i);
     const mesajMatch=fullReply.match(/\[MESAJ\]([\s\S]*?)\[\/MESAJ\]/i);
     const verdict=sonucMatch?sonucMatch[1].trim().toUpperCase():'';
-    const mesaj=mesajMatch?mesajMatch[1].trim():fullReply;
+    let mesaj;
+    if(mesajMatch){
+      mesaj=mesajMatch[1].trim();
+    }else{
+      mesaj=fullReply
+        .replace(/\[HESAPLA\][\s\S]*?\[\/HESAPLA\]/gi,'')
+        .replace(/\[HESAPLA\][\s\S]*$/gi,'')
+        .replace(/\[SONUC\][\s\S]*?\[\/SONUC\]/gi,'')
+        .replace(/\[\/?[A-ZÇĞİÖŞÜ]*\]/gi,'')
+        .trim();
+      if(!mesaj){
+        mesaj='Hadi bir kez daha bu problemi düşünelim, neresinde takıldığını anlatır mısın?';
+      }
+    }
     if(verdict.indexOf('DOGRU')!==-1||verdict.indexOf('DOĞRU')!==-1){
       answered=true;
       score++;streak++;

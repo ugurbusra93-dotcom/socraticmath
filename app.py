@@ -35,6 +35,18 @@ def init_db():
             "updated_at TIMESTAMP DEFAULT NOW()"
             ")"
         )
+        cur.execute(
+            "CREATE TABLE IF NOT EXISTS student_attempts ("
+            "id SERIAL PRIMARY KEY, "
+            "student_name TEXT NOT NULL, "
+            "problem_text TEXT NOT NULL, "
+            "selected_answer TEXT NOT NULL, "
+            "is_correct BOOLEAN NOT NULL, "
+            "attempt_number INTEGER NOT NULL, "
+            "question_index INTEGER, "
+            "created_at TIMESTAMP DEFAULT NOW()"
+            ")"
+        )
         conn.commit()
         cur.close()
         conn.close()
@@ -87,7 +99,7 @@ def chat():
             },
             json={
                 'model': 'claude-haiku-4-5-20251001',
-                'max_tokens': 400,
+                'max_tokens': 800,
                 'system': SYSTEM_PROMPT,
                 'messages': messages
             }
@@ -151,6 +163,66 @@ def get_questions():
                 return jsonify({'questions': questions})
             else:
                 return jsonify({'questions': []})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/attempts', methods=['POST'])
+def log_attempt():
+    try:
+        data = request.get_json()
+        student_name = data.get('student_name', 'Bilinmeyen')
+        problem_text = data.get('problem_text', '')
+        selected_answer = data.get('selected_answer', '')
+        is_correct = data.get('is_correct', False)
+        attempt_number = data.get('attempt_number', 1)
+        question_index = data.get('question_index', 0)
+
+        if DATABASE_URL and PSYCOPG2_AVAILABLE:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                'INSERT INTO student_attempts '
+                '(student_name, problem_text, selected_answer, is_correct, attempt_number, question_index) '
+                'VALUES (%s, %s, %s, %s, %s, %s)',
+                (student_name, problem_text, selected_answer, is_correct, attempt_number, question_index)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/attempts', methods=['GET'])
+def get_attempts():
+    try:
+        if DATABASE_URL and PSYCOPG2_AVAILABLE:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                'SELECT student_name, problem_text, selected_answer, is_correct, attempt_number, question_index, created_at '
+                'FROM student_attempts ORDER BY created_at DESC LIMIT 500'
+            )
+            rows = cur.fetchall()
+            cur.close()
+            conn.close()
+            attempts = []
+            for row in rows:
+                attempts.append({
+                    'student_name': row[0],
+                    'problem_text': row[1],
+                    'selected_answer': row[2],
+                    'is_correct': row[3],
+                    'attempt_number': row[4],
+                    'question_index': row[5],
+                    'created_at': row[6].isoformat() if row[6] else None
+                })
+            return jsonify({'attempts': attempts})
+        else:
+            return jsonify({'attempts': []})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
