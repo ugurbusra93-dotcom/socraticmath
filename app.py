@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import requests
 from flask import Flask, request, jsonify, send_from_directory
 from dotenv import load_dotenv
@@ -110,6 +111,10 @@ def chat():
             return jsonify({'error': result['error'].get('message', 'API hatasi')}), 400
 
         reply = ''.join(block.get('text', '') for block in result.get('content', [])).strip()
+
+        reply = re.sub(r'\[HESAPLA\][\s\S]*?\[/HESAPLA\]', '', reply, flags=re.IGNORECASE)
+        reply = reply.strip()
+
         return jsonify({'reply': reply})
 
     except Exception as e:
