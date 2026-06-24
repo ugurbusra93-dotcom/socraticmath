@@ -8,33 +8,64 @@ load_dotenv()
 
 app = Flask(__name__, static_folder='public', static_url_path='')
 
-QUESTIONS_FILE = os.path.join(os.path.dirname(__file__), 'questions.json')
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-SYSTEM_PROMPT = """CEVAP FORMATI (KESINLIKLE UY):
+try:
+    import psycopg2
+    PSYCOPG2_AVAILABLE = True
+except ImportError:
+    PSYCOPG2_AVAILABLE = False
 
-[HESAPLA]
-Problemi adim adim coz. Her islemi yaz: hangi sayilar, hangi islem, hangi sonuc. Sonucu iki kere kontrol et, farkli bir yoldan da dogrula.
-[/HESAPLA]
 
-[SONUC]
-DOGRU veya YANLIS (ogrencinin sectigi secenek, yukarida hesapladigin dogru cevaba uyuyor mu?)
-[/SONUC]
+def get_db_connection():
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    return conn
 
-[MESAJ]
-Eger DOGRU ise: ictenlikle tebrik et
-Eger YANLIS ise: TEK bir Sokratik soru sor
-[/MESAJ]
 
-Rolun: Sen, matematik konusunda mutlak yetkinlige sahip bir uzman ve Sokratik yontemle ogrenciyi yonlendiren ust duzey bir pedagogsun.
+def init_db():
+    if not DATABASE_URL or not PSYCOPG2_AVAILABLE:
+        return
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "CREATE TABLE IF NOT EXISTS questions_store ("
+            "id SERIAL PRIMARY KEY, "
+            "data JSONB NOT NULL, "
+            "updated_at TIMESTAMP DEFAULT NOW()"
+            ")"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print('DB init error: ' + str(e))
 
-Kritik Kurallar:
-- [HESAPLA] blogunda gercekten adim adim yaz, atlama yapma, her islemi goster
-- [SONUC] blogunda sadece DOGRU veya YANLIS yaz
-- [MESAJ] blogunda dogru cevabi asla soyleme veya ima etme, sadece soru veya tebrik yaz
-- Ogrenci anlamiyorsa farkli bir metafor kullan, ayni cumleyi tekrarlama
-- Her seferinde SADECE BIR soru sor
-- 7-8 yas seviyesine uygun basit ve somut dil kullan
-- [MESAJ] blogunun ici Markdown icermemeli, tek cumle olmali (tebrik haric)"""
+
+init_db()
+
+SYSTEM_PROMPT = (
+    "CEVAP FORMATI (KESINLIKLE UY):\n\n"
+    "[HESAPLA]\n"
+    "Problemi adim adim coz. Her islemi yaz: hangi sayilar, hangi islem, hangi sonuc. Sonucu iki kere kontrol et, farkli bir yoldan da dogrula.\n"
+    "[/HESAPLA]\n\n"
+    "[SONUC]\n"
+    "DOGRU veya YANLIS (ogrencinin sectigi secenek, yukarida hesapladigin dogru cevaba uyuyor mu?)\n"
+    "[/SONUC]\n\n"
+    "[MESAJ]\n"
+    "Eger DOGRU ise: ictenlikle tebrik et\n"
+    "Eger YANLIS ise: TEK bir Sokratik soru sor\n"
+    "[/MESAJ]\n\n"
+    "Rolun: Sen, matematik konusunda mutlak yetkinlige sahip bir uzman ve Sokratik yontemle ogrenciyi yonlendiren ust duzey bir pedagogsun.\n\n"
+    "Kritik Kurallar:\n"
+    "- [HESAPLA] blogunda gercekten adim adim yaz, atlama yapma, her islemi goster\n"
+    "- [SONUC] blogunda sadece DOGRU veya YANLIS yaz\n"
+    "- [MESAJ] blogunda dogru cevabi asla soyleme veya ima etme, sadece soru veya tebrik yaz\n"
+    "- Ogrenci anlamiyorsa farkli bir metafor kullan, ayni cumleyi tekrarlama\n"
+    "- Her seferinde SADECE BIR soru sor\n"
+    "- 7-8 yas seviyesine uygun basit ve somut dil kullan\n"
+    "- [MESAJ] blogunun ici Markdown icermemeli, tek cumle olmali (tebrik haric)"
+)
 
 
 @app.route('/api/chat', methods=['POST'])
@@ -78,8 +109,22 @@ def save_questions():
     try:
         data = request.get_json()
         questions = data.get('questions', [])
-        with open(QUESTIONS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(questions, f, ensure_ascii=False)
+
+        if DATABASE_URL and PSYCOPG2_AVAILABLE:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute('DELETE FROM questions_store')
+            cur.execute(
+                'INSERT INTO questions_store (data) VALUES (%s)',
+                (json.dumps(questions),)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+        else:
+            with open('questions.json', 'w', encoding='utf-8') as f:
+                json.dump(questions, f, ensure_ascii=False)
+
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -88,12 +133,24 @@ def save_questions():
 @app.route('/api/questions', methods=['GET'])
 def get_questions():
     try:
-        if os.path.exists(QUESTIONS_FILE):
-            with open(QUESTIONS_FILE, 'r', encoding='utf-8') as f:
-                questions = json.load(f)
-            return jsonify({'questions': questions})
+        if DATABASE_URL and PSYCOPG2_AVAILABLE:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute('SELECT data FROM questions_store ORDER BY id DESC LIMIT 1')
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            if row:
+                return jsonify({'questions': row[0]})
+            else:
+                return jsonify({'questions': []})
         else:
-            return jsonify({'questions': []})
+            if os.path.exists('questions.json'):
+                with open('questions.json', 'r', encoding='utf-8') as f:
+                    questions = json.load(f)
+                return jsonify({'questions': questions})
+            else:
+                return jsonify({'questions': []})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -110,5 +167,5 @@ def static_files(path):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3000))
-    print(f'Mathique calisiyor: http://localhost:{port}')
+    print('Mathique calisiyor: http://localhost:' + str(port))
     app.run(host='0.0.0.0', port=port, debug=False)
