@@ -170,6 +170,15 @@ body::before{content:"";position:fixed;right:-150px;top:20%;width:500px;height:5
 .dropdown-item.active{cursor:pointer;opacity:1;color:var(--mint-d);background:var(--mint-soft)}
 .dropdown-item.active:hover{background:var(--mint)}
 .dropdown-item.locked::after{content:'🔒';margin-left:auto;font-size:11px;opacity:.6}
+.name-screen{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+.name-screen .name-mascot{font-size:64px;margin-bottom:18px;animation:matkusFloat 3s ease-in-out infinite}
+.name-screen h2{font-family:'Baloo 2',sans-serif;font-size:24px;font-weight:800;color:var(--mint-d);margin-bottom:10px}
+.name-screen p{font-size:14.5px;color:var(--text-md);font-weight:700;margin-bottom:26px;max-width:320px}
+.name-input{width:100%;max-width:340px;padding:16px 22px;border-radius:50px;border:2.5px solid var(--mint);font-size:17px;font-weight:800;font-family:'Nunito',sans-serif;text-align:center;color:var(--text);outline:none;transition:border-color .2s;box-shadow:0 8px 24px rgba(45,175,120,.12)}
+.name-input:focus{border-color:var(--lav-d)}
+.name-submit{margin-top:18px;padding:14px 36px;border-radius:50px;background:linear-gradient(135deg,var(--mint-d),var(--sky-d));color:#fff;border:none;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 10px 26px rgba(45,175,120,.3);transition:transform .25s}
+.name-submit:hover{transform:translateY(-3px)}
+.name-submit:disabled{opacity:.5;cursor:default;transform:none}
 
 </style>
 </head>
@@ -214,7 +223,14 @@ body::before{content:"";position:fixed;right:-150px;top:20%;width:500px;height:5
     <div class="stat-pill" id="scorePill"><span>⭐</span> <span id="scoreVal">0</span> puan</div>
     <div class="stat-pill" id="streakPill"><span>🔥</span> <span id="streakVal">0</span> seri</div>
   </div>
-  <div class="loading-screen" id="loadingScreen">
+  <div class="name-screen" id="nameScreen">
+    <div class="name-mascot">🦉</div>
+    <h2>Hoş geldin, kaşif!</h2>
+    <p>Maceraya başlamadan önce adını öğrenebilir miyim?</p>
+    <input type="text" class="name-input" id="nameInput" placeholder="Adını yaz..." maxlength="40">
+    <button class="name-submit" id="nameSubmit">Başlayalım! 🚀</button>
+  </div>
+  <div class="loading-screen" id="loadingScreen" style="display:none">
     <svg class="spin" width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="#B8F0D8" stroke-width="5"/><path d="M22 4a18 18 0 0 1 18 18" fill="none" stroke="#2DAF78" stroke-width="5" stroke-linecap="round"/></svg><br>
     Sorular hazırlanıyor...
   </div>
@@ -289,6 +305,7 @@ body::before{content:"";position:fixed;right:-150px;top:20%;width:500px;height:5
 const KEYS=['A','B','C','D'];
 let questions=[],current=0,score=0,streak=0,answered=false,isBusy=false;
 let eliminatedKeys=[],attemptCount=0;
+let studentName='';
 const DEMO=[
   {problem:"Ali'nin 12 tane bilyesi var. Arkadaşına 5 tane verdi. Sonra marketten 3 tane daha aldı. Ali'nin şu an kaç bilyesi var?",secenekler:["8","10","14","15"]},
   {problem:"Bir sınıfta 24 öğrenci var. Öğretmen onları 4 eşit gruba ayırdı. Her grupta kaç öğrenci olur?",secenekler:["4","5","6","8"]},
@@ -401,6 +418,7 @@ async function getHint(selectedKey,selectedText,btn){
     if(verdict.indexOf('DOGRU')!==-1||verdict.indexOf('DOĞRU')!==-1){
       answered=true;
       score++;streak++;
+      logAttempt(q.problem,selectedKey+') '+selectedText,true,attemptCount,current);
       btn.classList.add('correct-reveal');
       hintBox.classList.remove('visible');
       document.querySelector('.matkus-row').classList.remove('speaking');
@@ -419,6 +437,7 @@ async function getHint(selectedKey,selectedText,btn){
     }
     streak=0;
     updateStatBar();
+    logAttempt(q.problem,selectedKey+') '+selectedText,false,attemptCount,current);
     hintText.textContent=mesaj;
     document.querySelector('.matkus-row').classList.remove('speaking');
     document.getElementById('matkusWrap').classList.remove('speaking');
@@ -495,23 +514,56 @@ document.querySelectorAll('#topicDropdown .dropdown-item.active').forEach(functi
   });
 });
 
-fetch('/api/questions')
-  .then(function(res){return res.json();})
-  .then(function(data){
-    if(data.questions&&data.questions.length>0){
-      questions=data.questions;
-      document.getElementById('demoNotice').textContent=questions.length+' problem hazır';
-    }else{
+function logAttempt(problemText,selectedAnswer,isCorrect,attemptNumber,questionIndex){
+  fetch('/api/attempts',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      student_name:studentName,
+      problem_text:problemText,
+      selected_answer:selectedAnswer,
+      is_correct:isCorrect,
+      attempt_number:attemptNumber,
+      question_index:questionIndex
+    })
+  }).catch(function(){});
+}
+
+function loadQuestionsAndStart(){
+  document.getElementById('loadingScreen').style.display='block';
+  fetch('/api/questions')
+    .then(function(res){return res.json();})
+    .then(function(data){
+      if(data.questions&&data.questions.length>0){
+        questions=data.questions;
+        document.getElementById('demoNotice').textContent=questions.length+' problem hazır';
+      }else{
+        questions=DEMO;
+        document.getElementById('demoNotice').textContent='Örnek problemler';
+      }
+      startApp();
+    })
+    .catch(function(){
       questions=DEMO;
       document.getElementById('demoNotice').textContent='Örnek problemler';
-    }
-    startApp();
-  })
-  .catch(function(){
-    questions=DEMO;
-    document.getElementById('demoNotice').textContent='Örnek problemler';
-    startApp();
-  });
+      startApp();
+    });
+}
+
+function submitName(){
+  const input=document.getElementById('nameInput');
+  const name=input.value.trim();
+  if(!name)return;
+  studentName=name;
+  document.getElementById('nameScreen').style.display='none';
+  loadQuestionsAndStart();
+}
+
+document.getElementById('nameSubmit').addEventListener('click',submitName);
+document.getElementById('nameInput').addEventListener('keydown',function(e){
+  if(e.key==='Enter')submitName();
+});
+
 </script>
 </body>
 </html>

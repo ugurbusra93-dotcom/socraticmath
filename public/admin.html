@@ -1,113 +1,76 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SocraticMath - Öğretmen Paneli</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Nunito',sans-serif;background:#FFF8F0;min-height:100vh;padding:40px 20px;color:#3A2A4A}
-    .page{max-width:680px;margin:0 auto}
-    .header{text-align:center;margin-bottom:32px}
-    .header h1{font-size:26px;font-weight:900;color:#7C5CBF}
-    .header p{font-size:13px;color:#7A6A8A;margin-top:6px}
-    .card{background:#fff;border:2px solid #D8C8FF;border-radius:20px;padding:28px;box-shadow:0 4px 20px rgba(120,80,160,.10);margin-bottom:20px}
-    .card h2{font-size:16px;font-weight:800;color:#7C5CBF;margin-bottom:14px}
-    .upload-area{border:2px dashed #D8C8FF;border-radius:14px;padding:32px;text-align:center;margin-bottom:16px}
-    input[type=file]{display:none}
-    .btn{font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;padding:12px 24px;border:2px solid #D8C8FF;border-radius:50px;background:#fff;color:#7C5CBF;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .2s}
-    .btn:hover{background:#D8C8FF;color:#fff}
-    .btn-save{background:linear-gradient(135deg,#7C5CBF,#3A8FD8);color:#fff;border:none;width:100%;justify-content:center;padding:14px;font-size:15px;margin-top:8px}
-    .btn-save:hover{opacity:0.9}
-    .btn-save:disabled{opacity:0.4;cursor:default}
-    .status{font-size:13px;color:#7A6A8A;margin-top:12px;text-align:center}
-    .status.success{color:#2DAF78;font-weight:700}
-    .status.error{color:#E07830;font-weight:700}
-    .preview{margin-top:16px;max-height:300px;overflow-y:auto;border:1px solid #E8E0F0;border-radius:10px}
-    .preview-item{padding:10px 14px;border-bottom:1px solid #F0EAF8;font-size:13px}
-    .preview-item:last-child{border-bottom:none}
-    .preview-q{font-weight:700;color:#3A2A4A;margin-bottom:4px}
-    .preview-opts{color:#7A6A8A;font-size:12px}
-    .format-info{font-size:12px;color:#7A6A8A;line-height:1.6;background:#FFF0A0;padding:12px 16px;border-radius:10px;margin-top:12px}
-    .format-info code{background:#fff;padding:2px 6px;border-radius:4px;font-weight:700}
-    table.format-table{width:100%;margin-top:10px;font-size:12px;border-collapse:collapse}
-    table.format-table th,table.format-table td{border:1px solid #E5C000;padding:6px 8px;text-align:left}
-    table.format-table th{background:#FFF0A0;font-weight:800}
-    .link-out{display:block;text-align:center;margin-top:24px;font-size:13px;color:#7C5CBF;text-decoration:none;font-weight:700}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mathique - Öğretmen Paneli</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:#F7FBF9;min-height:100vh;padding:32px 20px;color:#28433A}
+.wrap{max-width:880px;margin:0 auto}
+h1{font-family:'Baloo 2',sans-serif;font-size:26px;color:#2DAF78;margin-bottom:6px}
+.sub{color:#5C7A6E;font-weight:700;font-size:13.5px;margin-bottom:28px}
+.card{background:#fff;border-radius:20px;padding:26px;margin-bottom:22px;box-shadow:0 8px 24px rgba(45,175,120,.08);border:2px solid #E8F5EE}
+.card h2{font-size:17px;font-weight:800;margin-bottom:14px;color:#28433A}
+.upload-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+input[type=file]{display:none}
+.btn{padding:11px 22px;border-radius:50px;font-weight:800;font-size:14px;font-family:'Nunito',sans-serif;border:2px solid #2DAF78;background:#fff;color:#2DAF78;cursor:pointer;transition:all .2s}
+.btn:hover{background:#2DAF78;color:#fff}
+.status{font-size:13.5px;font-weight:700;color:#5C7A6E}
+.status.ok{color:#2DAF78}
+.status.err{color:#E8658A}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;padding:10px 12px;background:#E3FBF0;color:#2DAF78;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+td{padding:10px 12px;border-bottom:1px solid #EEF7F2;font-weight:600}
+tr:hover td{background:#FAFFFC}
+.badge{padding:3px 10px;border-radius:50px;font-size:11.5px;font-weight:800}
+.badge.ok{background:#E3FBF0;color:#2DAF78}
+.badge.no{background:#FBEAEE;color:#E8658A}
+.empty-msg{color:#9AAFA6;font-weight:700;text-align:center;padding:30px 0;font-size:14px}
+.refresh-btn{font-size:12.5px;padding:7px 16px}
+.table-wrap{max-height:480px;overflow-y:auto;border-radius:12px}
+.name-cell{font-weight:800;color:#28433A}
+.problem-cell{max-width:260px;font-size:12.5px;color:#5C7A6E}
+</style>
 </head>
 <body>
-<div class="page">
-  <div class="header">
-    <h1>🔒 SocraticMath Öğretmen Paneli</h1>
-    <p>Bu sayfa sadece sizin için. Öğrenciler buraya erişemez.</p>
+<div class="wrap">
+  <h1>🦉 Mathique — Öğretmen Paneli</h1>
+  <div class="sub">Soruları yönet ve öğrenci ilerlemesini takip et</div>
+
+  <div class="card">
+    <h2>📤 Soru Yükle (Excel)</h2>
+    <div class="upload-row">
+      <label class="btn" for="xlsxFile">Excel Dosyası Seç</label>
+      <input type="file" id="xlsxFile" accept=".xlsx,.xls">
+      <span class="status" id="fileStatus">Henüz dosya seçilmedi</span>
+    </div>
   </div>
 
   <div class="card">
-    <h2>📤 Soru Yükle</h2>
-    <div class="upload-area">
-      <label class="btn" for="xlsxFile">📁 Excel Dosyası Seç (.xlsx)</label>
-      <input type="file" id="xlsxFile" accept=".xlsx,.xls">
-      <div class="status" id="fileStatus"></div>
-    </div>
-    <div class="format-info">
-      Excel sütunları şu şekilde olmalı:
-      <table class="format-table">
-        <tr><th>problem</th><th>A</th><th>B</th><th>C</th><th>D</th></tr>
-        <tr><td>Ali'nin 12 bilyesi...</td><td>8</td><td>10</td><td>14</td><td>15</td></tr>
+    <h2>👩‍🎓 Öğrenci İlerlemesi <button class="btn refresh-btn" id="refreshBtn" style="margin-left:10px">🔄 Yenile</button></h2>
+    <div class="table-wrap">
+      <table id="attemptsTable">
+        <thead>
+          <tr>
+            <th>Öğrenci</th>
+            <th>Problem</th>
+            <th>Cevap</th>
+            <th>Deneme #</th>
+            <th>Sonuç</th>
+            <th>Zaman</th>
+          </tr>
+        </thead>
+        <tbody id="attemptsBody"></tbody>
       </table>
-      Doğru cevap sütunu gerekmez — yapay zeka kendisi hesaplar.
+      <div class="empty-msg" id="emptyMsg" style="display:none">Henüz kayıt yok.</div>
     </div>
   </div>
-
-  <div class="card" id="previewCard" style="display:none">
-    <h2>👀 Önizleme (<span id="qCount">0</span> soru)</h2>
-    <div class="preview" id="previewList"></div>
-    <button class="btn btn-save" id="saveBtn">✅ Bu Soruları Yayınla</button>
-    <div class="status" id="saveStatus"></div>
-  </div>
-
-  <div class="card" id="currentCard">
-    <h2>📋 Şu Anda Yayında Olan Sorular</h2>
-    <div class="status" id="currentStatus">Yükleniyor...</div>
-    <div class="preview" id="currentList"></div>
-  </div>
-
-  <a class="link-out" href="/">→ Öğrenci ekranına git</a>
 </div>
 
 <script>
-let pendingQuestions = [];
-
-function loadCurrentQuestions(){
-  fetch('/api/questions')
-    .then(function(res){ return res.json(); })
-    .then(function(data){
-      const list = document.getElementById('currentList');
-      const status = document.getElementById('currentStatus');
-      const qs = data.questions || [];
-      if(qs.length === 0){
-        status.textContent = 'Henüz soru yüklenmedi. Demo sorular gösteriliyor.';
-        list.innerHTML = '';
-        return;
-      }
-      status.textContent = qs.length + ' soru yayında.';
-      list.innerHTML = '';
-      qs.forEach(function(q, i){
-        const div = document.createElement('div');
-        div.className = 'preview-item';
-        div.innerHTML = '<div class="preview-q">'+(i+1)+'. '+q.problem+'</div>'+
-          '<div class="preview-opts">A) '+q.secenekler[0]+'  B) '+q.secenekler[1]+'  C) '+q.secenekler[2]+'  D) '+q.secenekler[3]+'</div>';
-        list.appendChild(div);
-      });
-    })
-    .catch(function(){
-      document.getElementById('currentStatus').textContent = 'Sorular yüklenemedi.';
-    });
-}
-
 document.getElementById('xlsxFile').addEventListener('change', function(e){
   const file = e.target.files[0];
   if(!file) return;
@@ -117,7 +80,7 @@ document.getElementById('xlsxFile').addEventListener('change', function(e){
       const wb = XLSX.read(ev.target.result, {type:'binary'});
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws);
-      pendingQuestions = rows.map(function(r){
+      const questions = rows.map(function(r){
         return {
           problem: String(r['problem']||r['Problem']||r['soru']||r['Soru']||''),
           secenekler: [
@@ -129,66 +92,65 @@ document.getElementById('xlsxFile').addEventListener('change', function(e){
         };
       }).filter(function(q){ return q.problem; });
 
-      if(pendingQuestions.length === 0){
-        document.getElementById('fileStatus').textContent = '⚠ Soru bulunamadı. Sütunlar: problem, A, B, C, D';
-        document.getElementById('fileStatus').className = 'status error';
+      if(questions.length === 0){
+        document.getElementById('fileStatus').textContent = 'Sütunlar bulunamadı: problem, A, B, C, D';
+        document.getElementById('fileStatus').className = 'status err';
         return;
       }
 
-      document.getElementById('fileStatus').textContent = '✅ ' + file.name + ' okundu';
-      document.getElementById('fileStatus').className = 'status success';
-
-      document.getElementById('qCount').textContent = pendingQuestions.length;
-      const list = document.getElementById('previewList');
-      list.innerHTML = '';
-      pendingQuestions.forEach(function(q, i){
-        const div = document.createElement('div');
-        div.className = 'preview-item';
-        div.innerHTML = '<div class="preview-q">'+(i+1)+'. '+q.problem+'</div>'+
-          '<div class="preview-opts">A) '+q.secenekler[0]+'  B) '+q.secenekler[1]+'  C) '+q.secenekler[2]+'  D) '+q.secenekler[3]+'</div>';
-        list.appendChild(div);
+      fetch('/api/questions', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({questions: questions})
+      })
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if(data.success){
+          document.getElementById('fileStatus').textContent = '✅ ' + questions.length + ' soru yüklendi: ' + file.name;
+          document.getElementById('fileStatus').className = 'status ok';
+        } else {
+          document.getElementById('fileStatus').textContent = 'Hata: ' + (data.error || 'bilinmeyen hata');
+          document.getElementById('fileStatus').className = 'status err';
+        }
       });
-      document.getElementById('previewCard').style.display = 'block';
     }catch(err){
       document.getElementById('fileStatus').textContent = 'Hata: ' + err.message;
-      document.getElementById('fileStatus').className = 'status error';
+      document.getElementById('fileStatus').className = 'status err';
     }
   };
   reader.readAsBinaryString(file);
 });
 
-document.getElementById('saveBtn').addEventListener('click', function(){
-  const btn = this;
-  btn.disabled = true;
-  const status = document.getElementById('saveStatus');
-  status.textContent = 'Kaydediliyor...';
-  status.className = 'status';
+function loadAttempts(){
+  fetch('/api/attempts')
+    .then(function(res){ return res.json(); })
+    .then(function(data){
+      const body = document.getElementById('attemptsBody');
+      const emptyMsg = document.getElementById('emptyMsg');
+      body.innerHTML = '';
+      const attempts = data.attempts || [];
+      if(attempts.length === 0){
+        emptyMsg.style.display = 'block';
+        return;
+      }
+      emptyMsg.style.display = 'none';
+      attempts.forEach(function(a){
+        const tr = document.createElement('tr');
+        const date = a.created_at ? new Date(a.created_at).toLocaleString('tr-TR') : '-';
+        tr.innerHTML =
+          '<td class="name-cell">' + a.student_name + '</td>' +
+          '<td class="problem-cell">' + a.problem_text + '</td>' +
+          '<td>' + a.selected_answer + '</td>' +
+          '<td>' + a.attempt_number + '</td>' +
+          '<td><span class="badge ' + (a.is_correct ? 'ok' : 'no') + '">' + (a.is_correct ? 'Doğru' : 'Yanlış') + '</span></td>' +
+          '<td>' + date + '</td>';
+        body.appendChild(tr);
+      });
+    });
+}
 
-  fetch('/api/questions', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({questions: pendingQuestions})
-  })
-  .then(function(res){ return res.json(); })
-  .then(function(data){
-    if(data.success){
-      status.textContent = '✅ ' + pendingQuestions.length + ' soru yayınlandı! Öğrenciler artık bunları görecek.';
-      status.className = 'status success';
-      loadCurrentQuestions();
-    } else {
-      status.textContent = '⚠ ' + (data.error || 'Bir hata oluştu');
-      status.className = 'status error';
-    }
-    btn.disabled = false;
-  })
-  .catch(function(err){
-    status.textContent = 'Hata: ' + err.message;
-    status.className = 'status error';
-    btn.disabled = false;
-  });
-});
-
-loadCurrentQuestions();
+document.getElementById('refreshBtn').addEventListener('click', loadAttempts);
+loadAttempts();
 </script>
 </body>
 </html>
