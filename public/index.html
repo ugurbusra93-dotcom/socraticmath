@@ -156,6 +156,21 @@ body::before{content:"";position:fixed;right:-150px;top:20%;width:500px;height:5
 .confetti{position:fixed;top:-20px;font-size:20px;z-index:5;pointer-events:none;animation:confettiFall linear forwards}
 @keyframes confettiFall{to{transform:translateY(110vh) rotate(540deg);opacity:0}}
 @media(max-width:480px){.choices-grid{grid-template-columns:1fr}.logo-title{font-size:25px}.matkus-wrap{width:80px;height:88px}}
+.dropdown-row{display:flex;gap:10px;margin-bottom:16px;position:relative;z-index:5}
+.dropdown-wrap{flex:1;position:relative}
+.dropdown-btn{width:100%;padding:12px 18px;border-radius:16px;font-size:14px;font-weight:800;font-family:'Nunito',sans-serif;border:2px solid var(--mint);background:#fff;color:var(--mint-d);cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .25s ease;box-shadow:0 4px 14px rgba(45,175,120,.1)}
+.dropdown-btn:hover{box-shadow:0 8px 20px rgba(45,175,120,.18);transform:translateY(-1px)}
+.dropdown-btn .chev{transition:transform .25s ease;font-size:11px}
+.dropdown-wrap.open .dropdown-btn .chev{transform:rotate(180deg)}
+.dropdown-wrap.open .dropdown-btn{border-color:var(--lav-d);color:var(--lav-d)}
+.dropdown-panel{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#fff;border-radius:16px;box-shadow:0 16px 40px rgba(40,67,58,.18);border:2px solid var(--mint);max-height:0;overflow:hidden;opacity:0;transition:max-height .3s ease,opacity .25s ease;z-index:10}
+.dropdown-wrap.open .dropdown-panel{max-height:280px;opacity:1;overflow-y:auto}
+.dropdown-item{padding:12px 18px;font-size:13.5px;font-weight:700;color:#AEC2B8;cursor:default;opacity:.55;border-bottom:1px solid #F0F7F3;display:flex;align-items:center;gap:8px}
+.dropdown-item:last-child{border-bottom:none}
+.dropdown-item.active{cursor:pointer;opacity:1;color:var(--mint-d);background:var(--mint-soft)}
+.dropdown-item.active:hover{background:var(--mint)}
+.dropdown-item.locked::after{content:'🔒';margin-left:auto;font-size:11px;opacity:.6}
+
 </style>
 </head>
 <body>
@@ -204,6 +219,34 @@ body::before{content:"";position:fixed;right:-150px;top:20%;width:500px;height:5
     Sorular hazırlanıyor...
   </div>
   <div class="student-section" id="studentSection" style="display:none">
+    <div class="dropdown-row">
+      <div class="dropdown-wrap" id="gradeDropdown">
+        <button class="dropdown-btn" id="gradeBtn">📚 2. Sınıf <span class="chev">▾</span></button>
+        <div class="dropdown-panel">
+          <div class="dropdown-item">1. Sınıf</div>
+          <div class="dropdown-item active selected">2. Sınıf</div>
+          <div class="dropdown-item">3. Sınıf</div>
+          <div class="dropdown-item">4. Sınıf</div>
+          <div class="dropdown-item">5. Sınıf</div>
+          <div class="dropdown-item">6. Sınıf</div>
+          <div class="dropdown-item">7. Sınıf</div>
+          <div class="dropdown-item">8. Sınıf</div>
+          <div class="dropdown-item">9. Sınıf</div>
+        </div>
+      </div>
+      <div class="dropdown-wrap" id="topicDropdown">
+        <button class="dropdown-btn" id="topicBtn">🎯 Problemler <span class="chev">▾</span></button>
+        <div class="dropdown-panel">
+          <div class="dropdown-item locked">1. Tema: Sayılar ve Nicelikler 1</div>
+          <div class="dropdown-item locked">2. Tema: Sayılar ve Nicelikler 2</div>
+          <div class="dropdown-item locked">3. Tema: İşlemlerden Cebirsel Düşünceye</div>
+          <div class="dropdown-item active selected">Problemler</div>
+          <div class="dropdown-item locked">4. Tema: Nesnelerin Geometrisi (1)</div>
+          <div class="dropdown-item locked">5. Tema: Nesnelerin Geometrisi (2)</div>
+          <div class="dropdown-item locked">6. Tema: Veriye Dayalı Araştırma</div>
+        </div>
+      </div>
+    </div>
     <div class="student-header">
       <div>
         <div class="section-title">📐 Problem zamanı!</div>
@@ -422,6 +465,37 @@ function startApp(){
   updateStatBar();
   loadQuestion();
 }
+document.getElementById('gradeBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  const wrap=document.getElementById('gradeDropdown');
+  const topicWrap=document.getElementById('topicDropdown');
+  topicWrap.classList.remove('open');
+  wrap.classList.toggle('open');
+});
+document.getElementById('topicBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  const wrap=document.getElementById('topicDropdown');
+  const gradeWrap=document.getElementById('gradeDropdown');
+  gradeWrap.classList.remove('open');
+  wrap.classList.toggle('open');
+});
+document.addEventListener('click',function(){
+  document.getElementById('gradeDropdown').classList.remove('open');
+  document.getElementById('topicDropdown').classList.remove('open');
+});
+document.querySelectorAll('#gradeDropdown .dropdown-item.active').forEach(function(item){
+  item.addEventListener('click',function(e){
+    e.stopPropagation();
+    document.getElementById('gradeDropdown').classList.remove('open');
+  });
+});
+document.querySelectorAll('#topicDropdown .dropdown-item.active').forEach(function(item){
+  item.addEventListener('click',function(e){
+    e.stopPropagation();
+    document.getElementById('topicDropdown').classList.remove('open');
+  });
+});
+
 fetch('/api/questions')
   .then(function(res){return res.json();})
   .then(function(data){
