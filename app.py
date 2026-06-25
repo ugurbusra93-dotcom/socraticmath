@@ -14,8 +14,10 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 try:
     import psycopg2
     PSYCOPG2_AVAILABLE = True
-except ImportError:
+    PSYCOPG2_IMPORT_ERROR = None
+except ImportError as e:
     PSYCOPG2_AVAILABLE = False
+    PSYCOPG2_IMPORT_ERROR = str(e)
 
 
 def get_db_connection():
@@ -237,6 +239,7 @@ def debug_db():
     info = {
         'database_url_set': bool(DATABASE_URL),
         'psycopg2_available': PSYCOPG2_AVAILABLE,
+        'psycopg2_import_error': PSYCOPG2_IMPORT_ERROR,
     }
     if DATABASE_URL and PSYCOPG2_AVAILABLE:
         try:
