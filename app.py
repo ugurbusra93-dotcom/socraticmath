@@ -232,6 +232,26 @@ def get_attempts():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/debug', methods=['GET'])
+def debug_db():
+    info = {
+        'database_url_set': bool(DATABASE_URL),
+        'psycopg2_available': PSYCOPG2_AVAILABLE,
+    }
+    if DATABASE_URL and PSYCOPG2_AVAILABLE:
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute('SELECT id, LENGTH(data::text), updated_at FROM questions_store ORDER BY id DESC')
+            rows = cur.fetchall()
+            info['rows'] = [{'id': r[0], 'data_length': r[1], 'updated_at': str(r[2])} for r in rows]
+            cur.close()
+            conn.close()
+        except Exception as e:
+            info['db_error'] = str(e)
+    return jsonify(info)
+
+
 @app.route('/')
 def index():
     return send_from_directory('public', 'index.html')
